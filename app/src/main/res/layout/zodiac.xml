@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.birdsquest.cardviewer.Card xmlns:android="http://schemas.android.com/apk/res/android"
+                                android:orientation="vertical"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+    <LinearLayout android:id="@+id/content"
+                  android:orientation="vertical"
+                  android:background="?android:attr/selectableItemBackground"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent"
+                  android:padding="10dp">
+        <TextView android:id="@+id/name"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"/>
+        <TextView android:id="@+id/description"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"/>
+    </LinearLayout>
+    <Button
+        android:id="@+id/undo"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:text="Undo"
+        android:background="@android:drawable/ic_menu_revert"
+        android:textAllCaps="true"
+        android:textColor="@android:color/white"
+        android:layout_gravity="end|center_vertical"
+        style="?android:buttonBarStyle"
+    />
+</com.birdsquest.cardviewer.Card>

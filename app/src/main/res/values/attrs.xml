@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="Deck">
+        <attr name="cardLayout" format="reference" value="R.id.card"/>
+    </declare-styleable>
+</resources>
