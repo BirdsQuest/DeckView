@@ -60,6 +60,7 @@ public class Deck extends RecyclerView{
 		setItemAnimator(new DefaultItemAnimator());
 		setAdapter(new Adapter());
 		addItemDecoration(itemDecoration);//new DividerItemDecoration(context, LinearLayoutManager.VERTICAL));
+		setHasFixedSize(false);
 		//addOnScrollListener();
 		leftIcon=ContextCompat.getDrawable(context,android.R.drawable.ic_menu_delete);
 		leftIcon.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP);
@@ -100,6 +101,12 @@ public class Deck extends RecyclerView{
 		//cards.remove(position);
 		//getAdapter().notifyItemRemoved(position);
 	}
+
+	public void clear() {
+		cards.clear();
+		getAdapter().notifyDataSetChanged();
+	}
+
 
 	public boolean isPendingRemoval(int position){
 		return pendingRemoval.contains(cards.get(position));
@@ -452,3 +459,8 @@ setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             }
         });
 		 */
+
+
+//To Add Expandable Cards => http://stackoverflow.com/questions/41475119/how-to-use-onclicklistner-on-cardview-in-a-recyclerview
+//To Add Grid View and make drag handles =>https://medium.com/@ipaulpro/drag-and-swipe-with-recyclerview-6a6f0c422efd#.9hzdjmvg7
+//Whole bunch of demo examples => https://github.com/h6ah4i/android-advancedrecyclerview
