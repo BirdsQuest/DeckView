@@ -1,10 +1,13 @@
 package com.birdsquest.cardviewer;
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Parcel;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -25,83 +28,41 @@ import java.util.Iterator;
 /*
 	The News Object is an individual news article derived from parsed JSON
  */
-public class News extends Card implements HTTPListener{
+public class News extends DeckView implements HTTPListener{
+	private static final String TAG="NEWS";
 	private static String baseURL="http://www3.nhk.or.jp/news/easy/",
 			VideoBaseUrl="rtmp://flv.nhk.or.jp/ondemand/flv/news/&movie=",
 			newsList="news-list.json";
-	private static Deck deck;
-	//static final int layout=R.layout.news;
-	//static int[] ids={R.id.name,R.id.url};
-	@Override public void setLayout(ArrayList<View> view){
-		((TextView)view.get(0)).setText(title);
-		((TextView)view.get(1)).setText(url);
-		//if(image!=null){HTTP.setImage((ImageView)view.get(2),image);}
-	}
-	String newsID, title, url, image, sound, movie;
-	Date date;
 
-	public News(Context context){
-		super(context);
+	//Constructors
+	public News(Context context){super(context);init(context, null);}
+	public News(Context context, AttributeSet attrs){super(context, attrs);init(context, attrs);}
+	@Override void init(Context context, AttributeSet attrs){
+		cardLayout=R.layout.news;
+		layoutIDs=new int[]{R.id.name,R.id.url};
+		super.init(context,attrs);
 	}
 
-	public static void save(Deck deck, Bundle outState){
-		News news;
-		String[] newsID=new String[deck.cards.size()],
-				url=new String[deck.cards.size()],
-				image=new String[deck.cards.size()],
-				sound=new String[deck.cards.size()],
-				movie=new String[deck.cards.size()],
-				date=new String[deck.cards.size()];
-		for(int index=0;index<deck.cards.size();index++){
-			news=(News)deck.cards.get(index);
-			newsID[index]=news.newsID;
-			url[index]=news.name;
-			image[index]=news.image;
-			sound[index]=news.sound;
-			movie[index]=news.movie;
-			date[index]=news.date.toString();
+	@Override public void fetchCards(){
+		HTTP.send(baseURL+newsList,this);
+	}
+
+	class NewsObject extends DeckView.CardObject{
+		String newsID, url, image, sound, movie;
+		Date date;
+
+		public NewsObject(int id, String newsID, String name, String url, String image, String sound, String movie, Date date){
+			super(id, name);
+			//Cards details
+			this.newsID=newsID;
+			this.url=url;
+			this.image=image;
+			this.sound=sound;
+			this.movie=movie;
+			this.date=date;
 		}
-		outState.putStringArray("newsID",newsID);
-		outState.putStringArray("url",url);
-		outState.putStringArray("image",image);
-		outState.putStringArray("sound",sound);
-		outState.putStringArray("movie",movie);
-		outState.putStringArray("date",date);
-	}
-
-	public static void load(Deck deck, @Nullable Bundle savedInstanceState){
-		News news;
-		if(savedInstanceState!=null){
-			Card.load(deck,savedInstanceState);
-			String[] newsID=savedInstanceState.getStringArray("newsID"),
-					url=savedInstanceState.getStringArray("url"),
-					image=savedInstanceState.getStringArray("image"),
-					sound=savedInstanceState.getStringArray("sound"),
-					movie=savedInstanceState.getStringArray("movie"),
-					date=savedInstanceState.getStringArray("date");
-			for(int index=0; index<newsID.length; index++){
-				news=(News)deck.cards.get(index);
-				news.newsID=newsID[index];
-				news.url=url[index];
-				news.image=image[index];
-				news.sound=sound[index];
-				news.movie=movie[index];
-				news.date=new Date(date[index]);
-
-			}
-			if(newsID.length==0){fetchCards(deck);}
-		}
-	}
-
-	public static void fetchCards(Deck deck){
-		News.deck=deck;
-		HTTP.send(baseURL+newsList,null);
-	}
-
-	public String toString(){
-		return newsID+"("+date+"): "+title;
-	}
-	public void set(JSONObject article){
+		public NewsObject(int id, JSONObject article){
+			super(id,null);
 		/* JSON Structure
 			[{"2017-01-18":[{"news_priority_number":"1",
 					"news_prearranged_time":"2017-01-18 17:20:00",
@@ -132,13 +93,13 @@ public class News extends Card implements HTTPListener{
 			String[] split;
 			//Log.e("TAGG",article.toString());
 			newsID=article.getString("news_id");
-			title=article.getString("name");
+			name=article.getString("title");
 			//Switch the URL from the default news site to the easy one
 			split=article.getString("news_web_url").split("/");
 			split[4]="easy";
 			split[5]=newsID;
 			url=TextUtils.join("/",split);
-			Log.e(article.getString("news_web_url"),url);
+			//Log.e(article.getString("news_web_url"),url);
 
 			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			try {
@@ -167,21 +128,51 @@ public class News extends Card implements HTTPListener{
 			e.printStackTrace();
 		}
 	}
-	public Drawable FetchImage(String url) {
-		try{
-			InputStream input=(InputStream) new URL(url).getContent();
-			return Drawable.createFromStream(input, newsID);
-		}catch(Exception e){return null;}
+		public void setLayout(ArrayList<View> view){
+			((TextView)view.get(0)).setText(name);
+			((TextView)view.get(1)).setText(url);
+			//if(image!=null){HTTP.setImage((ImageView)view.get(2),image);}
+		}
+
+		public String toString(){
+			return newsID+"("+date+"): "+name;
+		}
 	}
-	public Uri videoURI(){
-		if(movie!=null){
-			return Uri.parse(VideoBaseUrl+movie);
-		}else{return null;}
+
+	@Override public NewsObject get(int index){
+		return (NewsObject)cards.get(index).holder;
+	}
+
+	@Override public News.NewsObject loadParcel(Parcel in){
+		News.NewsObject news=(News.NewsObject)super.loadParcel(in);
+		String[] data=new String[3];
+		in.readStringArray(data);
+		//Cards details
+		news.newsID=data[2];
+		news.url=data[3];
+		news.image=data[4];
+		news.sound=data[5];
+		news.movie=data[6];
+		news.date=new Date(data[7]);
+		return news;
+	}
+
+	@Override public void saveParcel(Parcel dest, Object cardObject) {
+		News.NewsObject news=(News.NewsObject)cardObject;
+		dest.writeStringArray(new String[]{news.id+"", news.name,
+			//Cards details
+			news.newsID,
+			news.url,
+			news.image,
+			news.sound,
+			news.movie,
+			news.date.toString()
+		});
 	}
 
 	@Override public void serverResponded(final String responseString){
 		final Context context=getContext();
-		//runOnUiThread(
+		((Activity)context).runOnUiThread(
 		new Runnable() {
 			@Override
 			public void run(){
@@ -194,21 +185,31 @@ public class News extends Card implements HTTPListener{
 						if(jsonObject.get(key) instanceof JSONArray){
 							jsonArray=(JSONArray)jsonObject.get(key);
 							for(int index=0; index<jsonArray.length(); index++){
-								News newsObj=new News(context);
-								newsObj.set((JSONObject)((JSONArray)jsonObject.get(key)).get(index));
-								deck.addCard(newsObj);
+								NewsObject newsObj=new NewsObject(index,(JSONObject)((JSONArray)jsonObject.get(key)).get(index));
+								addCard(newsObj.getCard());
 							}
 						}
 					}
-					//setNews(news.get(0));
 				}catch(JSONException e){
 					e.printStackTrace();
 				}
 			}
-		};//);
+		});
 	}
 
 	@Override public String MakeJSONToSend(String[] param){
 		return null;
+	}
+
+	public Drawable FetchImage(String url, NewsObject article) {
+		try{
+			InputStream input=(InputStream) new URL(url).getContent();
+			return Drawable.createFromStream(input, article.newsID);
+		}catch(Exception e){return null;}
+	}
+	public Uri videoURI(NewsObject article){
+		if(article.movie!=null){
+			return Uri.parse(VideoBaseUrl+article.movie);
+		}else{return null;}
 	}
 }
